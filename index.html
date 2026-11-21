@@ -1,0 +1,173 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="theme-color" content="#f5eee7">
+<title>Relax Massages Bien-Être</title>
+<style>
+:root{--ink:#40372f;--muted:#75695f;--accent:#9a765d;--paper:#fffaf5;--soft:#f2e8df}
+*{box-sizing:border-box}body{margin:0;background:var(--paper);color:var(--ink);font-family:Arial,sans-serif;line-height:1.6}
+header{padding:30px 18px;text-align:center;background:var(--soft)}
+h1{font-family:Georgia,serif;font-weight:normal;font-size:clamp(2rem,6vw,3rem);margin:0}
+header p{margin:8px 0 0;color:var(--muted)}
+main{max-width:900px;margin:auto;padding:24px 18px}
+.hero img{width:100%;max-height:480px;object-fit:cover;border-radius:16px;display:block}
+h2{font-family:Georgia,serif;font-weight:normal;color:#765941;margin-top:30px}
+.intro{text-align:center;max-width:700px;margin:20px auto}
+.services{display:grid;grid-template-columns:repeat(auto-fit,minmax(230px,1fr));gap:12px}
+.service{background:white;border:1px solid #eaded2;border-radius:12px;padding:15px}
+.service h3{margin:0 0 6px;font-size:1.05rem}.price{font-weight:bold;color:#765941}
+.note{font-size:.92rem;color:var(--muted)}
+form{background:white;padding:20px;border:1px solid #eaded2;border-radius:14px}
+label{display:block;font-weight:bold;margin:12px 0 5px}
+input,select,textarea{width:100%;padding:12px;border:1px solid #cdbdae;border-radius:8px;font:inherit;background:#fff}
+button{margin-top:18px;background:var(--accent);color:white;border:0;padding:13px 20px;border-radius:9px;font-size:1rem}
+footer{text-align:center;padding:25px;background:var(--soft);color:var(--muted);font-size:.9rem}
+.small{font-size:.86rem;color:var(--muted)}
+</style>
+</head>
+<body>
+<header>
+<h1>Relax Massages Bien-Être</h1>
+<p>Un moment pour vous, une parenthèse de bien-être</p>
+</header>
+<main>
+<div class="hero"><img src="salle-massage.jpg" alt="Salle de massage Relax Massages Bien-Être"></div>
+<p class="intro">Bienvenue chez Relax Massages Bien-Être. Offrez-vous un moment de détente et prenez soin de vous dans une atmosphère chaleureuse et apaisante.</p>
+
+<h2>Les massages et leurs tarifs</h2>
+<div class="services">
+<div class="service"><h3>Massage intuitif</h3><div class="price">1 h 30 : 120 € · 2 h : 150 €</div></div>
+<div class="service"><h3>Deep Tissue / sportif</h3><div class="price">1 h 30 : 120 €</div></div>
+<div class="service"><h3>Californien / suédois</h3><div class="price">1 h : 80 € · 1 h 30 : 120 €</div></div>
+<div class="service"><h3>Massage lymphatique (Dr Vodder)</h3><div class="price">1 h : 80 €</div></div>
+<div class="service"><h3>Chi Nei Tsang</h3><div class="price">1 h : 80 €</div></div>
+<div class="service"><h3>Méthode Poyet</h3><div class="price">1 h 30 : 120 €</div></div>
+</div>
+
+<h2>Prendre rendez-vous</h2>
+<p>Les rendez-vous sont proposés tous les jours, de 10 h à 20 h, sous réserve de confirmation.</p>
+<form id="booking" name="reservation" method="POST" action="/merci" data-netlify="true" netlify-honeypot="bot-field">
+<input type="hidden" name="subject" value="Nouvelle demande de rendez-vous – Relax Massages Bien-Être">
+<p hidden><label>Ne pas remplir : <input name="bot-field"></label></p>
+<label for="massage">Massage souhaité</label>
+<select id="massage" name="massage" required>
+<option value="">Choisissez un massage</option>
+<option>Massage intuitif</option>
+<option>Deep Tissue / sportif</option>
+<option>Californien / suédois</option>
+<option>Massage lymphatique (Dr Vodder)</option>
+<option>Chi Nei Tsang</option>
+<option>Méthode Poyet</option>
+</select>
+<label for="lieu">Lieu du rendez-vous</label>
+<select id="lieu" name="lieu" required><option value="">Choisissez</option><option value="Au cabinet à Corbelin">Au cabinet à Corbelin</option><option value="À domicile">À mon domicile (déplacement à convenir)</option></select>
+<label for="duree">Durée</label>
+<select id="duree" name="duree" required>
+<option value="">Choisissez une durée</option>
+<option value="1 h – 80 €">1 h – 80 €</option>
+<option value="1 h 30 – 120 €">1 h 30 – 120 €</option>
+<option value="2 h – 150 €">2 h – 150 €</option>
+</select>
+<p id="duree-info" class="small" hidden></p>
+<label for="date">Date souhaitée</label><input id="date" name="date" type="date" required>
+<label for="heure">Heure souhaitée</label><input id="heure" name="heure" type="time" min="10:00" max="20:00" required>
+<label for="nom">Nom</label><input id="nom" name="nom" autocomplete="family-name" required>
+<label for="prenom">Prénom</label><input id="prenom" name="prenom" autocomplete="given-name" required>
+<label for="tel">Téléphone mobile</label><input id="tel" name="telephone" type="tel" autocomplete="tel" required>
+<label for="email">E-mail (facultatif)</label><input id="email" name="email" type="email" autocomplete="email">
+<div id="bloc-adresse">
+<label for="adresse">Adresse <span id="adresse-mention">(uniquement pour un rendez-vous à domicile)</span></label><textarea id="adresse" name="adresse" rows="2" autocomplete="street-address"></textarea>
+</div>
+<label><input type="checkbox" name="consentement" value="Oui" required style="width:auto"> J’accepte que mes informations soient utilisées uniquement pour traiter ma demande de rendez-vous.</label>
+<button type="submit">Envoyer ma demande</button>
+<p class="small">Le supplément de déplacement est à convenir directement. Paiement sur place uniquement. Pour annuler, merci d’appeler le 06 38 84 35 31.</p>
+</form>
+<div id="preview" class="service" hidden aria-live="polite"></div>
+<p class="note">Votre demande nous est transmise directement. Votre rendez-vous n’est confirmé qu’après un échange direct.</p>
+<h2>Contact</h2>
+<p>Téléphone : <a href="tel:0638843531">06 38 84 35 31</a></p>
+<p>Zone de déplacement : jusqu’à 70 km autour de Corbelin. À domicile, les séances de 1 h 30 ou 2 h uniquement.</p>
+</main>
+<footer>Relax Massages Bien-Être · Corbelin (Isère)</footer>
+<script>
+(function(){
+ var form=document.getElementById('booking');
+ var $=function(id){return document.getElementById(id)};
+ var massage=$('massage'),lieu=$('lieu'),duree=$('duree'),info=$('duree-info');
+ var adresse=$('adresse'),blocAdresse=$('bloc-adresse'),mention=$('adresse-mention');
+ // Durées proposées pour chaque massage (tarifs identiques à la grille ci-dessus)
+ var durees={
+  'Massage intuitif':['1 h 30 – 120 €','2 h – 150 €'],
+  'Deep Tissue / sportif':['1 h 30 – 120 €'],
+  'Californien / suédois':['1 h – 80 €','1 h 30 – 120 €'],
+  'Massage lymphatique (Dr Vodder)':['1 h – 80 €'],
+  'Chi Nei Tsang':['1 h – 80 €'],
+  'Méthode Poyet':['1 h 30 – 120 €']
+ };
+ // À domicile : séances de 1 h 30 ou 2 h uniquement
+ var domicileOk=['1 h 30 – 120 €','2 h – 150 €'];
+
+ function maj(){
+  var domicile=lieu.value==='À domicile';
+  var liste=durees[massage.value]||null;
+  var dispo=0;
+  Array.prototype.forEach.call(duree.options,function(o){
+   if(!o.value)return;
+   var ok=(!liste||liste.indexOf(o.value)>-1)&&(!domicile||domicileOk.indexOf(o.value)>-1);
+   o.disabled=!ok;o.hidden=!ok;
+   if(ok)dispo++;
+  });
+  if(duree.selectedOptions[0]&&duree.selectedOptions[0].disabled)duree.value='';
+  if(liste&&liste.length===1&&dispo===1){
+   Array.prototype.forEach.call(duree.options,function(o){if(o.value&&!o.disabled)duree.value=o.value});
+  }
+  if(liste&&dispo===0){
+   info.hidden=false;
+   info.textContent='Ce massage dure 1 h : il est proposé uniquement au cabinet à Corbelin (à domicile, séances de 1 h 30 ou 2 h uniquement).';
+   duree.setCustomValidity('Ce massage n’est pas proposé à domicile.');
+  }else{
+   info.hidden=true;info.textContent='';duree.setCustomValidity('');
+  }
+  // Adresse obligatoire uniquement à domicile
+  adresse.required=domicile;
+  blocAdresse.hidden=!domicile;
+  mention.textContent=domicile?'(obligatoire pour un rendez-vous à domicile)':'(uniquement pour un rendez-vous à domicile)';
+ }
+ massage.addEventListener('change',maj);
+ lieu.addEventListener('change',maj);
+ maj();
+
+ // Pas de date dans le passé
+ var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+ $('date').min=d.toISOString().slice(0,10);
+
+ form.addEventListener('submit',function(e){
+  e.preventDefault();
+  if(lieu.value!=='À domicile')adresse.value='';
+  var btn=form.querySelector('button[type=submit]');
+  btn.disabled=true;btn.textContent='Envoi en cours…';
+  var data=new URLSearchParams(new FormData(form));
+  data.set('form-name','reservation');
+  fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()})
+  .then(function(r){
+   if(!r.ok)throw new Error(r.status);
+   var out=$('preview');
+   var esc=function(t){var s=document.createElement('span');s.textContent=t;return s.innerHTML};
+   var dateTxt=$('date').value?new Date($('date').value+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
+   out.innerHTML='<h3>Merci, votre demande a bien été envoyée !</h3><p>'+[
+    esc(massage.value+' – '+duree.value),esc(lieu.value),esc(dateTxt+' à '+$('heure').value),esc($('prenom').value+' '+$('nom').value),esc($('tel').value)
+   ].join('<br>')+'</p><p>Nous vous recontactons rapidement pour confirmer votre rendez-vous. Pour toute question : <a href="tel:0638843531">06 38 84 35 31</a>.</p>';
+   out.hidden=false;
+   form.reset();maj();
+   out.scrollIntoView({behavior:'smooth'});
+  })
+  .catch(function(){
+   alert('Désolé, la demande n’a pas pu être envoyée. Merci de réessayer ou d’appeler le 06 38 84 35 31.');
+  })
+  .finally(function(){btn.disabled=false;btn.textContent='Envoyer ma demande'});
+ });
+})();
+</script>
+</body></html>
