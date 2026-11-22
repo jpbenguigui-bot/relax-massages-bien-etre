@@ -69,10 +69,13 @@ footer{text-align:center;padding:25px;background:var(--soft);color:var(--muted);
 <option value="1 h – 80 €">1 h – 80 €</option>
 <option value="1 h 30 – 120 €">1 h 30 – 120 €</option>
 <option value="2 h – 150 €">2 h – 150 €</option>
-</select>
+ </select>
 <p id="duree-info" class="small" hidden></p>
 <label for="date">Date souhaitée</label><input id="date" name="date" type="date" required>
-<label for="heure">Heure souhaitée</label><input id="heure" name="heure" type="time" min="10:00" max="20:00" required>
+<label for="heure">Heure souhaitée</label>
+<select id="heure" name="heure" required>
+  <option value="">Choisissez une heure</option>
+</select>
 <label for="nom">Nom</label><input id="nom" name="nom" autocomplete="family-name" required>
 <label for="prenom">Prénom</label><input id="prenom" name="prenom" autocomplete="given-name" required>
 <label for="tel">Téléphone mobile</label><input id="tel" name="telephone" type="tel" autocomplete="tel" required>
@@ -92,12 +95,16 @@ footer{text-align:center;padding:25px;background:var(--soft);color:var(--muted);
 </main>
 <footer>Relax Massages Bien-Être · Corbelin (Isère)</footer>
 <script>
+
 (function(){
  var form=document.getElementById('booking');
  var $=function(id){return document.getElementById(id)};
  var massage=$('massage'),lieu=$('lieu'),duree=$('duree'),info=$('duree-info');
  var adresse=$('adresse'),blocAdresse=$('bloc-adresse'),mention=$('adresse-mention');
- // Durées proposées pour chaque massage (tarifs identiques à la grille ci-dessus)
+ var dateInput=$('date'),heureInput=$('heure');
+ var horairesOccupes=[];
+ var numeroVerification=0;
+
  var durees={
   'Massage intuitif':['1 h 30 – 120 €','2 h – 150 €'],
   'Deep Tissue / sportif':['1 h 30 – 120 €'],
@@ -106,108 +113,219 @@ footer{text-align:center;padding:25px;background:var(--soft);color:var(--muted);
   'Chi Nei Tsang':['1 h – 80 €'],
   'Méthode Poyet':['1 h 30 – 120 €']
  };
- // À domicile : séances de 1 h 30 ou 2 h uniquement
+
  var domicileOk=['1 h 30 – 120 €','2 h – 150 €'];
 
  function maj(){
   var domicile=lieu.value==='À domicile';
   var liste=durees[massage.value]||null;
   var dispo=0;
+
   Array.prototype.forEach.call(duree.options,function(o){
    if(!o.value)return;
-   var ok=(!liste||liste.indexOf(o.value)>-1)&&(!domicile||domicileOk.indexOf(o.value)>-1);
-   o.disabled=!ok;o.hidden=!ok;
+   var ok=(!liste||liste.indexOf(o.value)>-1)&&
+          (!domicile||domicileOk.indexOf(o.value)>-1);
+   o.disabled=!ok;
+   o.hidden=!ok;
    if(ok)dispo++;
   });
-  if(duree.selectedOptions[0]&&duree.selectedOptions[0].disabled)duree.value='';
-  if(liste&&liste.length===1&&dispo===1){
-   Array.prototype.forEach.call(duree.options,function(o){if(o.value&&!o.disabled)duree.value=o.value});
+
+  if(duree.selectedOptions[0]&&duree.selectedOptions[0].disabled){
+   duree.value='';
   }
+
+  if(liste&&liste.length===1&&dispo===1){
+   Array.prototype.forEach.call(duree.options,function(o){
+    if(o.value&&!o.disabled)duree.value=o.value;
+   });
+  }
+
   if(liste&&dispo===0){
    info.hidden=false;
-   info.textContent='Ce massage dure 1 h : il est proposé uniquement au cabinet à Corbelin (à domicile, séances de 1 h 30 ou 2 h uniquement).';
+   info.textContent='Ce massage dure 1 h : il est proposé uniquement au cabinet à Corbelin.';
    duree.setCustomValidity('Ce massage n’est pas proposé à domicile.');
   }else{
-   info.hidden=true;info.textContent='';duree.setCustomValidity('');
+   info.hidden=true;
+   info.textContent='';
+   duree.setCustomValidity('');
   }
-  // Adresse obligatoire uniquement à domicile
+
   adresse.required=domicile;
   blocAdresse.hidden=!domicile;
-  mention.textContent=domicile?'(obligatoire pour un rendez-vous à domicile)':'(uniquement pour un rendez-vous à domicile)';
+  mention.textContent=domicile?
+   '(obligatoire pour un rendez-vous à domicile)':
+   '(uniquement pour un rendez-vous à domicile)';
  }
- massage.addEventListener('change',maj);
- lieu.addEventListener('change',maj);
- maj();
 
  // Pas de date dans le passé
- var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
- $('date').min=d.toISOString().slice(0,10);
-  // Vérification des disponibilités Google Agenda
- var dateInput=$('date');
- var heureInput=$('heure');
- var horairesOccupes=[];
+ var d=new Date();
+ d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
+ dateInput.min=d.toISOString().slice(0,10);
 
  async function verifierDisponibilite(){
-  if(!dateInput.value)return true;
+  var numero=++numeroVerification;
+var ancienneHeure=heureInput.value;
+  heureInput.innerHTML='<option value="">Chargement des horaires...</option>';
+
+  if(!dateInput.value||!duree.value){
+   heureInput.innerHTML='<option value="">Choisissez une date et une durée</option>';
+   return true;
+  }
 
   try{
-   var response=await fetch('/.netlify/functions/google-calendar?date='+dateInput.value);
+   var response=await fetch(
+    '/.netlify/functions/google-calendar?date='+
+    encodeURIComponent(dateInput.value),
+    {cache:'no-store'}
+   );
+
    if(!response.ok)throw new Error('Erreur calendrier');
 
    var data=await response.json();
+
+   if(numero!==numeroVerification)return false;
+
    horairesOccupes=data.blocked||[];
+
+  
+   heureInput.innerHTML='<option value="">Choisissez une heure</option>';
+
+   var dureeMinutes=duree.value.indexOf('2 h')===0?120:
+                    duree.value.indexOf('1 h 30')===0?90:60;
+
+   for(var minutes=600;minutes+dureeMinutes<=1200;minutes+=30){
+    var h=Math.floor(minutes/60);
+    var m=minutes%60;
+    var heure=String(h).padStart(2,'0')+':'+String(m).padStart(2,'0');
+
+    var debut=new Date(dateInput.value+'T'+heure+':00');
+    var fin=new Date(debut.getTime()+dureeMinutes*60000);
+
+    var conflit=horairesOccupes.some(function(p){
+     return debut.getTime()<new Date(p.end).getTime()&&
+            fin.getTime()>new Date(p.start).getTime();
+    });
+
+    if(!conflit){
+     var option=document.createElement('option');
+     option.value=heure;
+     option.textContent=heure;
+     heureInput.appendChild(option);
+    }
+   }
+
+   if(heureInput.options.length===1){
+    heureInput.innerHTML='<option value="">Aucun créneau disponible</option>';
+   }else if(ancienneHeure){
+    heureInput.value=ancienneHeure;
+   }
+
    return true;
+
   }catch(error){
-   alert('Impossible de vérifier Google Agenda. Merci de réessayer.');
+   if(numero===numeroVerification){
+    heureInput.innerHTML='<option value="">Disponibilités indisponibles</option>';
+    alert('Impossible de vérifier Google Agenda. Merci de réessayer.');
+   }
    return false;
   }
  }
 
+ massage.addEventListener('change',function(){
+  maj();
+  verifierDisponibilite();
+ });
+
+ lieu.addEventListener('change',function(){
+  maj();
+  verifierDisponibilite();
+ });
+
+ duree.addEventListener('change',verifierDisponibilite);
  dateInput.addEventListener('change',verifierDisponibilite);
+
+ maj();
 
  form.addEventListener('submit',async function(e){
   e.preventDefault();
-    // Vérifier les créneaux déjà occupés dans Google Agenda
+
   var calendrierOK=await verifierDisponibilite();
   if(!calendrierOK)return;
 
-  var debut=new Date(dateInput.value+'T'+heureInput.value);
+  if(!heureInput.value){
+   alert('Merci de choisir une heure disponible.');
+   return;
+  }
+
+  var debut=new Date(dateInput.value+'T'+heureInput.value+':00');
   var dureeMinutes=duree.value.indexOf('2 h')===0?120:
                    duree.value.indexOf('1 h 30')===0?90:60;
   var fin=new Date(debut.getTime()+dureeMinutes*60000);
 
   var conflit=horairesOccupes.some(function(p){
-    return debut.getTime()<new Date(p.end).getTime() &&
-           fin.getTime()>new Date(p.start).getTime();
+   return debut.getTime()<new Date(p.end).getTime()&&
+          fin.getTime()>new Date(p.start).getTime();
   });
 
   if(conflit){
-    alert('Ce créneau est déjà occupé dans Google Agenda. Merci de choisir une autre heure.');
-    return;
+   alert('Ce créneau est déjà occupé dans Google Agenda. Merci de choisir une autre heure.');
+   return;
   }
+
   if(lieu.value!=='À domicile')adresse.value='';
+
   var btn=form.querySelector('button[type=submit]');
-  btn.disabled=true;btn.textContent='Envoi en cours…';
+  btn.disabled=true;
+  btn.textContent='Envoi en cours…';
+
   var data=new URLSearchParams(new FormData(form));
   data.set('form-name','reservation');
-  fetch('/',{method:'POST',headers:{'Content-Type':'application/x-www-form-urlencoded'},body:data.toString()})
+
+  fetch('/',{
+   method:'POST',
+   headers:{'Content-Type':'application/x-www-form-urlencoded'},
+   body:data.toString()
+  })
   .then(function(r){
    if(!r.ok)throw new Error(r.status);
+
    var out=$('preview');
-   var esc=function(t){var s=document.createElement('span');s.textContent=t;return s.innerHTML};
-   var dateTxt=$('date').value?new Date($('date').value+'T12:00').toLocaleDateString('fr-FR',{weekday:'long',day:'numeric',month:'long',year:'numeric'}):'';
-   out.innerHTML='<h3>Merci, votre demande a bien été envoyée !</h3><p>'+[
-    esc(massage.value+' – '+duree.value),esc(lieu.value),esc(dateTxt+' à '+$('heure').value),esc($('prenom').value+' '+$('nom').value),esc($('tel').value)
-   ].join('<br>')+'</p><p>Nous vous recontactons rapidement pour confirmer votre rendez-vous. Pour toute question : <a href="tel:0638843531">06 38 84 35 31</a>.</p>';
+   var esc=function(t){
+    var s=document.createElement('span');
+    s.textContent=t;
+    return s.innerHTML;
+   };
+
+   var dateTxt=new Date(dateInput.value+'T12:00').toLocaleDateString(
+    'fr-FR',
+    {weekday:'long',day:'numeric',month:'long',year:'numeric'}
+   );
+
+   out.innerHTML='<h3>Merci, votre demande a bien été envoyée !</h3><p>'+
+    [
+     esc(massage.value+' – '+duree.value),
+     esc(lieu.value),
+     esc(dateTxt+' à '+heureInput.value),
+     esc($('prenom').value+' '+$('nom').value),
+     esc($('tel').value)
+    ].join('<br>')+
+    '</p><p>Nous vous recontactons rapidement pour confirmer votre rendez-vous. Pour toute question : <a href="tel:0638843531">06 38 84 35 31</a>.</p>';
+
    out.hidden=false;
-   form.reset();maj();
+   form.reset();
+   maj();
+   heureInput.innerHTML='<option value="">Choisissez une date et une durée</option>';
    out.scrollIntoView({behavior:'smooth'});
   })
   .catch(function(){
    alert('Désolé, la demande n’a pas pu être envoyée. Merci de réessayer ou d’appeler le 06 38 84 35 31.');
   })
-  .finally(function(){btn.disabled=false;btn.textContent='Envoyer ma demande'});
+  .finally(function(){
+   btn.disabled=false;
+   btn.textContent='Envoyer ma demande';
+  });
  });
 })();
+
 </script>
 </body></html>
