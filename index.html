@@ -142,9 +142,49 @@ footer{text-align:center;padding:25px;background:var(--soft);color:var(--muted);
  // Pas de date dans le passé
  var d=new Date();d.setMinutes(d.getMinutes()-d.getTimezoneOffset());
  $('date').min=d.toISOString().slice(0,10);
+  // Vérification des disponibilités Google Agenda
+ var dateInput=$('date');
+ var heureInput=$('heure');
+ var horairesOccupes=[];
 
- form.addEventListener('submit',function(e){
+ async function verifierDisponibilite(){
+  if(!dateInput.value)return true;
+
+  try{
+   var response=await fetch('/.netlify/functions/google-calendar?date='+dateInput.value);
+   if(!response.ok)throw new Error('Erreur calendrier');
+
+   var data=await response.json();
+   horairesOccupes=data.blocked||[];
+   return true;
+  }catch(error){
+   alert('Impossible de vérifier Google Agenda. Merci de réessayer.');
+   return false;
+  }
+ }
+
+ dateInput.addEventListener('change',verifierDisponibilite);
+
+ form.addEventListener('submit',async function(e){
   e.preventDefault();
+    // Vérifier les créneaux déjà occupés dans Google Agenda
+  var calendrierOK=await verifierDisponibilite();
+  if(!calendrierOK)return;
+
+  var debut=new Date(dateInput.value+'T'+heureInput.value);
+  var dureeMinutes=duree.value.indexOf('2 h')===0?120:
+                   duree.value.indexOf('1 h 30')===0?90:60;
+  var fin=new Date(debut.getTime()+dureeMinutes*60000);
+
+  var conflit=horairesOccupes.some(function(p){
+    return debut.getTime()<new Date(p.end).getTime() &&
+           fin.getTime()>new Date(p.start).getTime();
+  });
+
+  if(conflit){
+    alert('Ce créneau est déjà occupé dans Google Agenda. Merci de choisir une autre heure.');
+    return;
+  }
   if(lieu.value!=='À domicile')adresse.value='';
   var btn=form.querySelector('button[type=submit]');
   btn.disabled=true;btn.textContent='Envoi en cours…';
